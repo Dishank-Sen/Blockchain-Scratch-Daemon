@@ -31,13 +31,13 @@ func main(){
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	logger.Info("Daemon started..")
 	
 	daemon, err := daemon.NewDaemon(ctx)
 	if err != nil{
 		logger.Error(fmt.Sprintf("new daemon error: %v", err))
 		stop()
 	}
+	logger.Info("Daemon started..")
 
 	// blocking code
 	if err := daemon.Run(); err != nil{
