@@ -60,6 +60,7 @@ func (s *Server) Listen() error{
 
 	for{
 		conn, err := s.listener.Accept()
+		logger.Debug("new connection")
 		if err != nil{
 			if s.ctx.Err() != nil{
 				return err

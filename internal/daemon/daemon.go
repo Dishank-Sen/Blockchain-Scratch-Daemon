@@ -42,6 +42,8 @@ func (d *Daemon) Run() error{
 	server := d.server
 
 	server.Get("/ping", controller.PingController)
+	server.Post("/register", controller.RegisterController)
+
 
 	return server.Listen()  // blocks here
 }
