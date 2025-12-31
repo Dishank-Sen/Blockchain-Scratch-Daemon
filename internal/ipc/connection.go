@@ -3,6 +3,7 @@ package ipc
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
@@ -31,6 +32,9 @@ func (c *Connection) Handle() error{
 	parser := NewParser(c.conn)
 	req, err := parser.ParseRequest()
 	if err != nil{
+		if err == io.EOF {
+			return nil // normal close
+		}
 		return err
 	}
 
