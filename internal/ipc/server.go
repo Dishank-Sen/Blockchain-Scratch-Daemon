@@ -22,8 +22,6 @@ type Server struct {
 	socketPath string
 	ctx        context.Context
 	cancel     context.CancelFunc
-	// rpc        *Rpc
-	// stream     *Stream
 	routes map[routeKey]HandlerFunc
 }
 
@@ -59,7 +57,7 @@ func (s *Server) Listen() error{
 	}()
 
 	for{
-		conn, err := s.listener.Accept()
+		conn, err := s.listener.Accept() // blocking
 		logger.Debug("new connection")
 		if err != nil{
 			if s.ctx.Err() != nil{

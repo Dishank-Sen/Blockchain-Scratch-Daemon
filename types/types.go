@@ -13,3 +13,11 @@ type Response struct {
 	Headers    map[string]string
 	Body       []byte
 }
+
+type StreamMessage struct{
+	Version uint16 `json:"version"`
+	Header  map[string]string `json:"header"`
+    Endpoint    string `json:"endpoint"`
+    Length  uint32 `json:"length"`
+    Body []byte `json:"body"`
+}

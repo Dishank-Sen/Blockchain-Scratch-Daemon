@@ -39,6 +39,7 @@ func (d *Daemon) Run() error{
 		logger.Warn("daemon shutting down..")
 	}()
 
+	// listens for the socket connection requests
 	server := d.server
 
 	server.Get("/ping", controller.PingController)
