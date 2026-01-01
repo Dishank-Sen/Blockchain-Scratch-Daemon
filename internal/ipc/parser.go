@@ -22,13 +22,13 @@ func NewParser(conn net.Conn) *Parser{
 }
 
 func (p *Parser) ParseRequest() (*types.Request, error) {
-	// 1. Read headers (up to \r\n\r\n)
+	// Read headers (up to \r\n\r\n)
 	rawHeaders, err := readUntilDelimiter(p.reader, []byte("\r\n\r\n"))
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Parse header section
+	// Parse header section
 	lines := strings.Split(string(rawHeaders), "\r\n")
 
 	// Request line: METHOD PATH VERSION
@@ -43,7 +43,7 @@ func (p *Parser) ParseRequest() (*types.Request, error) {
 		Headers: make(map[string]string),
 	}
 
-	// 3. Parse headers
+	// Parse headers
 	for _, line := range lines[1:] {
 		if line == "" {
 			break
@@ -55,7 +55,7 @@ func (p *Parser) ParseRequest() (*types.Request, error) {
 		}
 	}
 
-	// 4. Read body (if Content-Length exists)
+	// Read body (if Content-Length exists)
 	if cl, ok := req.Headers["Content-Length"]; ok {
 		n, err := strconv.Atoi(cl)
 		if err != nil {

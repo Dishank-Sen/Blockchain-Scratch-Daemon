@@ -2,9 +2,11 @@ package ipc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
@@ -58,14 +60,20 @@ func (s *Server) Listen() error{
 
 	for{
 		conn, err := s.listener.Accept() // blocking
-		logger.Debug("new connection")
 		if err != nil{
-			if s.ctx.Err() != nil{
-				return err
+			if s.ctx.Err() != nil || errors.Is(err, net.ErrClosed) {
+				logger.Info("listener shutting down")
+				return nil
 			}
-			logger.Error(fmt.Sprintf("accept error: %v", err))
-			continue
+
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+				logger.Warn(fmt.Sprintf("temporary accept error: %v", err))
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+			return fmt.Errorf("listener accept failed: %v", err)
 		}
+		logger.Debug("new connection")
 
 		go func (c net.Conn)  {
 			conn := NewConnection(s.ctx, s, c)
@@ -85,6 +93,8 @@ func (s *Server) Post(endpoint string, h HandlerFunc){
 }
 
 func (s *Server) dispatch(ctx context.Context, req *types.Request) *types.Response {
+	logger.Debug("server.go - 96")
+	logger.Debug(req.Path)
 	key := routeKey{
 		method: req.Method,
 		path:   req.Path,
@@ -92,6 +102,7 @@ func (s *Server) dispatch(ctx context.Context, req *types.Request) *types.Respon
 
 	h, ok := s.routes[key]
 	if !ok {
+		logger.Debug("server.go - 105")
 		return &types.Response{
 			StatusCode: 404,
 			Message:    "Not Found",
@@ -100,7 +111,11 @@ func (s *Server) dispatch(ctx context.Context, req *types.Request) *types.Respon
 	}
 
 	resp, err := h(ctx, req)
+	logger.Debug(resp.Message)
+
 	if err != nil {
+		logger.Debug("server.go - 112")
+		logger.Error(err.Error())
 		return &types.Response{
 			StatusCode: 500,
 			Message:    "Internal Error",

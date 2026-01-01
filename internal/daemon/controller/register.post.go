@@ -18,15 +18,23 @@ func RegisterController(ctx context.Context, req *types.Request) (*types.Respons
 		return nil, err
 	}
 
-	resp, err := quic.Post(
+	// resp, err := quic.Post(
+	// 	ctx,
+	// 	"/register",
+	// 	req.Headers,
+	// 	req.Body,
+	// )
+	// logger.Debug("register.post - 28")
+	// logger.Debug(resp.Message)
+	// if err != nil {
+	// 	return resp, err
+	// }
+
+	// return resp, nil
+	return quic.Post(
 		ctx,
 		"/register",
 		req.Headers,
 		req.Body,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
 }

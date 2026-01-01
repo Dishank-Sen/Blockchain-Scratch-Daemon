@@ -29,6 +29,12 @@ func NewConnection(ctx context.Context, server *Server, conn net.Conn) *Connecti
 }
 
 func (c *Connection) Handle() error{
+	go func ()  {
+		<-c.ctx.Done()
+		logger.Warn("closing connection")
+		c.conn.Close()
+	}()
+
 	parser := NewParser(c.conn)
 	req, err := parser.ParseRequest()
 	if err != nil{
@@ -37,14 +43,6 @@ func (c *Connection) Handle() error{
 		}
 		return err
 	}
-
-	logger.Debug(req.Method)
-	logger.Debug(req.Path)
-	logger.Debug("headers")
-	for k, p := range req.Headers{
-		logger.Debug(fmt.Sprintf("%s: %s", k, p))
-	}
-	logger.Debug(string(req.Body))
 
 	resp := c.server.dispatch(c.ctx, req)
 	return writeResponse(c.conn, resp)

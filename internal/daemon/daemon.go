@@ -36,7 +36,7 @@ func NewDaemon(ctx context.Context) (*Daemon, error) {
 func (d *Daemon) Run() error{
 	go func() {
 		<-d.ctx.Done()
-		logger.Warn("daemon shutting down..")
+		logger.Info("daemon shutting down..")
 	}()
 
 	// listens for the socket connection requests
