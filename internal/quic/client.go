@@ -32,7 +32,7 @@ func getClient(ctx context.Context) (*Client, error) {
 	// IMPORTANT: use Background for dialing
 	conn, err := quic.DialAddr(
 		context.Background(),
-		"127.0.0.1:4242",
+		"100.48.90.87:4242",  // 100.48.90.87:4242
 		clientTLSConfig(),
 		clientQuicConfig(),
 	)
