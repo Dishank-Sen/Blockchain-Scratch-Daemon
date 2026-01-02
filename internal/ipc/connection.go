@@ -44,7 +44,17 @@ func (c *Connection) Handle() error{
 		return err
 	}
 
-	resp := c.server.dispatch(c.ctx, req)
+	resp, err := c.server.dispatch(c.ctx, req)
+	if err != nil{
+		logger.Debug("connection.go - 49")
+		logger.Error(err.Error())
+		logger.Debug("writing response - connection.go - 51")
+		if rerr := writeResponse(c.conn, resp); rerr != nil{
+			return rerr
+		}
+		return err
+	}
+
 	return writeResponse(c.conn, resp)
 }
 

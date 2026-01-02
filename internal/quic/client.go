@@ -73,7 +73,7 @@ func (c *Client) get(ctx context.Context, path string, headers map[string]string
 
 	stream, err := c.conn.OpenStreamSync(ctx)
 	if err != nil {
-		return errorResponse(err), nil
+		return errorResponse(err), err
 	}
 	defer stream.Close()
 
@@ -84,12 +84,12 @@ func (c *Client) get(ctx context.Context, path string, headers map[string]string
 	}
 
 	if err := writeRequest(stream, req); err != nil {
-		return errorResponse(err), nil
+		return errorResponse(err), err
 	}
 
 	resp, err := readResponse(stream)
 	if err != nil {
-		return errorResponse(err), nil
+		return errorResponse(err), err
 	}
 
 	return resp, nil
@@ -100,8 +100,10 @@ func (c *Client) get(ctx context.Context, path string, headers map[string]string
 func Post(ctx context.Context, path string, headers map[string]string, body []byte) (*types.Response, error) {
 	c, err := getClient(ctx)
 	if err != nil {
+		logger.Debug("some error - client.go - 103")
 		return errorResponse(err), nil
 	}
+	logger.Debug("client get - client.go - 105")
 	return c.post(ctx, path, headers, body)
 }
 
@@ -109,9 +111,14 @@ func (c *Client) post(ctx context.Context, path string, headers map[string]strin
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if c.conn == nil{
+		logger.Debug("conn is nil")
+	}
 	stream, err := c.conn.OpenStreamSync(ctx)
 	if err != nil {
-		return errorResponse(err), nil
+		logger.Debug("some error - client - 116")
+		logger.Error(err.Error())
+		return errorResponse(err), err
 	}
 	defer stream.Close()
 
@@ -123,12 +130,12 @@ func (c *Client) post(ctx context.Context, path string, headers map[string]strin
 	}
 
 	if err := writeRequest(stream, req); err != nil {
-		return errorResponse(err), nil
+		return errorResponse(err), err
 	}
 
 	resp, err := readResponse(stream)
 	if err != nil {
-		return errorResponse(err), nil
+		return errorResponse(err), err
 	}
 
 	return resp, nil
@@ -154,7 +161,6 @@ func clientTLSConfig() *tls.Config {
 
 func clientQuicConfig() *quic.Config{
 	return &quic.Config{
-		MaxIdleTimeout: 30 * time.Second,
+		MaxIdleTimeout: 60 * time.Minute,
 	}
 }
-
