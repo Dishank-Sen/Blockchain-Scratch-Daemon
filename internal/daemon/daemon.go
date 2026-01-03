@@ -11,21 +11,20 @@ import (
 )
 
 type Daemon struct{
-	server *ipc.Server
+	server ipc.Server
 	ctx context.Context
 	cancel context.CancelFunc
 }
 
 func NewDaemon(ctx context.Context) (*Daemon, error) {
 	daemonCtx, daemonCancel := context.WithCancel(ctx)
-	socketPath := "/tmp/blocd.sock"
 
-	server, err := ipc.NewServer(daemonCtx, socketPath)
+	server, err := ipc.NewServer(daemonCtx)
 	if err != nil{
 		daemonCancel()
 		return nil, err
 	}
-
+	
 	daemon := &Daemon{
 		server: server,
 		ctx: daemonCtx,
