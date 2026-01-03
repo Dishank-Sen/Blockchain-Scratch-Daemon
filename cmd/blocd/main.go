@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
 	"syscall"
 
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/daemon"
@@ -13,19 +15,40 @@ import (
 )
 
 func init() {
+	logPath := defaultLogPath()
+
+	// Ensure parent directory exists
+	if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
+		logger.Error(fmt.Sprintf("failed to create log dir: %v", err))
+		return
+	}
+
 	logFile, err := os.OpenFile(
-		"/tmp/blocd.log",
+		logPath,
 		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
 		0644,
 	)
 	if err != nil {
-		// If logging fails, fall back to stderr
 		logger.Error(fmt.Sprintf("failed to open log file: %v", err))
 		return
 	}
 
 	log.SetOutput(logFile)
 }
+
+func defaultLogPath() string {
+	if runtime.GOOS == "windows" {
+		base := os.Getenv("LOCALAPPDATA")
+		if base == "" {
+			base = os.TempDir()
+		}
+		return filepath.Join(base, "blocd", "blocd.log")
+	}
+
+	// Linux / macOS
+	return "/tmp/blocd.log"
+}
+
 
 func main(){
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
