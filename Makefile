@@ -33,11 +33,11 @@ run: build
 	$(BIN)
 
 # -------------------------
-# Install (global)
+# Install / Replace binary
 # -------------------------
 install: build
 ifeq ($(GOOS),windows)
-	@echo "Installing $(APP_NAME) (Administrator required)"
+	@echo "Installing $(APP_NAME) to $(INSTALL_DIR) (Administrator required)"
 	powershell -Command " \
 	  if (-not ([Security.Principal.WindowsPrincipal] \
 	    [Security.Principal.WindowsIdentity]::GetCurrent() \
@@ -46,15 +46,7 @@ ifeq ($(GOOS),windows)
 	  }"
 	powershell -Command "New-Item -ItemType Directory -Force '$(INSTALL_DIR)'"
 	powershell -Command "Copy-Item '$(BIN)' '$(INSTALL_DIR)/$(APP_NAME)$(EXT)' -Force"
-	powershell -Command " \
-	  $$path = [Environment]::GetEnvironmentVariable('Path','Machine'); \
-	  if ($$path -notlike '*$(INSTALL_DIR)*') { \
-	    [Environment]::SetEnvironmentVariable('Path', $$path + ';$(INSTALL_DIR)', 'Machine') \
-	  }"
-	@echo ""
-	@echo "SUCCESS:"
-	@echo "  Installed $(APP_NAME) to $(INSTALL_DIR)"
-	@echo "  Restart all terminals or reboot for PATH changes to apply"
+	@echo "Replaced $(INSTALL_DIR)/$(APP_NAME)$(EXT)"
 else
 	sudo cp "$(BIN)" "$(INSTALL_DIR)/$(APP_NAME)"
 endif
