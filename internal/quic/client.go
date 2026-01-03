@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 	"github.com/quic-go/quic-go"
@@ -32,7 +33,7 @@ func getClient(ctx context.Context) (*Client, error) {
 	// IMPORTANT: use Background for dialing
 	conn, err := quic.DialAddr(
 		context.Background(),
-		"100.48.90.87:4242",  // 100.48.90.87:4242
+		constants.LocalBootstrapUrl,
 		clientTLSConfig(),
 		clientQuicConfig(),
 	)
@@ -62,7 +63,7 @@ func getClient(ctx context.Context) (*Client, error) {
 func Get(ctx context.Context, path string, headers map[string]string) (*types.Response, error) {
 	c, err := getClient(ctx)
 	if err != nil {
-		return errorResponse(err), nil
+		return errorResponse(err), err
 	}
 	return c.get(ctx, path, headers)
 }
@@ -101,7 +102,7 @@ func Post(ctx context.Context, path string, headers map[string]string, body []by
 	c, err := getClient(ctx)
 	if err != nil {
 		logger.Debug("some error - client.go - 103")
-		return errorResponse(err), nil
+		return errorResponse(err), err
 	}
 	logger.Debug("client get - client.go - 105")
 	return c.post(ctx, path, headers, body)
@@ -110,10 +111,7 @@ func Post(ctx context.Context, path string, headers map[string]string, body []by
 func (c *Client) post(ctx context.Context, path string, headers map[string]string, body []byte) (*types.Response, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	if c.conn == nil{
-		logger.Debug("conn is nil")
-	}
+	
 	stream, err := c.conn.OpenStreamSync(ctx)
 	if err != nil {
 		logger.Debug("some error - client - 116")
@@ -162,5 +160,6 @@ func clientTLSConfig() *tls.Config {
 func clientQuicConfig() *quic.Config{
 	return &quic.Config{
 		MaxIdleTimeout: 60 * time.Minute,
+		KeepAlivePeriod: 15 * time.Second,
 	}
 }

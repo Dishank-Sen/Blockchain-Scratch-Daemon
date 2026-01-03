@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
+	// "strings"
 	"sync"
 	"time"
 
@@ -76,38 +76,39 @@ func (s *unixServer) Listen() error{
 			conn := newUnixConnection(s.ctx, s, c)
 			if err := conn.Handle(); err != nil{
 				logger.Warn(fmt.Sprintf("conn error: %v", err))
-				if isTimeoutError(err){
-					logger.Error("bootstrap connection timed out")
-					go s.cancel()
-				}
+				// if isTimeoutError(err){
+				// 	logger.Error("bootstrap connection timed out")
+				// 	go s.cancel()
+				// }
+				go s.cancel()
 			}
 		}(conn)
 	}
 }
 
-func isTimeoutError(err error) bool {
-	if err == nil {
-		return false
-	}
+// func isTimeoutError(err error) bool {
+// 	if err == nil {
+// 		return false
+// 	}
 
-	// 1. Context deadline
-	if errors.Is(err, context.DeadlineExceeded) {
-		return true
-	}
+// 	// 1. Context deadline
+// 	if errors.Is(err, context.DeadlineExceeded) {
+// 		return true
+// 	}
 
-	// 2. net.Error timeout
-	var netErr net.Error
-	if errors.As(err, &netErr) && netErr.Timeout() {
-		return true
-	}
+// 	// 2. net.Error timeout
+// 	var netErr net.Error
+// 	if errors.As(err, &netErr) && netErr.Timeout() {
+// 		return true
+// 	}
 
-	// 3. quic-go idle timeout (fallback)
-	if strings.Contains(err.Error(), "no recent network activity") {
-		return true
-	}
+// 	// 3. quic-go idle timeout (fallback)
+// 	if strings.Contains(err.Error(), "no recent network activity") {
+// 		return true
+// 	}
 
-	return false
-}
+// 	return false
+// }
 
 
 func (s *unixServer) Get(endpoint string, h HandlerFunc){
@@ -144,8 +145,9 @@ func (s *unixServer) dispatch(ctx context.Context, req *types.Request) (*types.R
 	}
 
 	resp, err := h(ctx, req)  // IMPORTANT LINE
-	logger.Debug("server.go - 144")
+	logger.Debug("uni_server.go - 147")
 	logger.Debug(resp.Message)
+	logger.Debug(string(resp.Body))
 
 	if err != nil {
 		logger.Debug("server.go - 148")
