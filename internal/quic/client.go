@@ -33,7 +33,7 @@ func getClient(ctx context.Context) (*Client, error) {
 	// IMPORTANT: use Background for dialing
 	conn, err := quic.DialAddr(
 		context.Background(),
-		constants.LocalBootstrapUrl,
+		constants.PublicBootstrapUrl,
 		clientTLSConfig(),
 		clientQuicConfig(),
 	)
@@ -111,7 +111,7 @@ func Post(ctx context.Context, path string, headers map[string]string, body []by
 func (c *Client) post(ctx context.Context, path string, headers map[string]string, body []byte) (*types.Response, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	stream, err := c.conn.OpenStreamSync(ctx)
 	if err != nil {
 		logger.Debug("some error - client - 116")
