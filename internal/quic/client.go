@@ -48,6 +48,7 @@ func getClient(ctx context.Context) (*Client, error) {
 
 	go func() {
 		<-ctx.Done()
+		logger.Error(ctx.Err().Error())
 		logger.Warn("closing quic connection")
 		conn.CloseWithError(0, "client exiting")
 

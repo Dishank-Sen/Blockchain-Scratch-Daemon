@@ -19,6 +19,7 @@ import (
 
 type windowsServer struct {
 	listener net.Listener
+	daemonCtx context.Context
 	ctx      context.Context
 	cancel   context.CancelFunc
 	routes   map[routeKey]HandlerFunc
@@ -43,6 +44,7 @@ func newWindowsServer(ctx context.Context) (*windowsServer, error) {
 
 	return &windowsServer{
 		listener: ln,
+		daemonCtx: ctx,
 		ctx:      ipcCtx,
 		cancel:   ipcCancel,
 		routes:   make(map[routeKey]HandlerFunc),
@@ -69,7 +71,7 @@ func (s *windowsServer) Listen() error {
 		logger.Debug("new windows pipe connection")
 
 		go func(c net.Conn) {
-			conn := newWindowsConnection(s.ctx, s, c)
+			conn := newWindowsConnection(s, c)
 			if err := conn.Handle(); err != nil {
 				logger.Warn(fmt.Sprintf("pipe conn error: %v", err))
 			}

@@ -10,16 +10,18 @@ import (
 
 type unixConnection struct{
 	conn net.Conn
+	daemonCtx context.Context
 	ctx context.Context
 	cancel context.CancelFunc
 	server *unixServer
 }
 
-func newUnixConnection(ctx context.Context, server *unixServer, conn net.Conn) *unixConnection{
-	connCtx, connCancel := context.WithCancel(ctx)
+func newUnixConnection(server *unixServer, conn net.Conn) *unixConnection{
+	connCtx, connCancel := context.WithCancel(server.ctx)
 
 	return &unixConnection{
 		conn: conn,
+		daemonCtx: server.daemonCtx,
 		ctx: connCtx,
 		cancel: connCancel,
 		server: server,
@@ -27,6 +29,7 @@ func newUnixConnection(ctx context.Context, server *unixServer, conn net.Conn) *
 }
 
 func (c *unixConnection) Handle() error{
+	defer c.conn.Close()
 	go func ()  {
 		<-c.ctx.Done()
 		logger.Warn("closing connection")
@@ -42,7 +45,7 @@ func (c *unixConnection) Handle() error{
 		return err
 	}
 
-	resp, err := c.server.dispatch(c.ctx, req)
+	resp, err := c.server.dispatch(c.daemonCtx, req)  // IMPORTANT: DON'T PUT RANDOM CONTEXT IN THIS AS THIS RESULTS IN CLOSING OF QUIC CONNECTION
 	if err != nil{
 		logger.Debug("connection.go - 49")
 		logger.Error(err.Error())

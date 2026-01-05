@@ -11,20 +11,21 @@ import (
 
 type windowsConnection struct {
 	conn   net.Conn
+	daemonCtx context.Context
 	ctx    context.Context
 	cancel context.CancelFunc
 	server *windowsServer
 }
 
 func newWindowsConnection(
-	ctx context.Context,
 	server *windowsServer,
 	conn net.Conn,
 ) *windowsConnection {
-	connCtx, connCancel := context.WithCancel(ctx)
+	connCtx, connCancel := context.WithCancel(server.ctx)
 
 	return &windowsConnection{
 		conn:   conn,
+		daemonCtx: server.daemonCtx,
 		ctx:    connCtx,
 		cancel: connCancel,
 		server: server,
@@ -50,7 +51,7 @@ func (c *windowsConnection) Handle() error {
 		return err
 	}
 
-	resp, err := c.server.dispatch(c.ctx, req)
+	resp, err := c.server.dispatch(c.daemonCtx, req)
 	if err != nil {
 		if rerr := writeResponse(c.conn, resp); rerr != nil {
 			return rerr
