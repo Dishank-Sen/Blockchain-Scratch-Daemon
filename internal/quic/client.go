@@ -3,75 +3,93 @@ package quic
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"sync"
-	"time"
 
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 	"github.com/quic-go/quic-go"
 )
 
-type Client struct {
+type quicService struct {
 	conn *quic.Conn
+	ctx context.Context
+	cancel context.CancelFunc
 	mu   sync.Mutex
 }
 
 var (
-	clientMu sync.Mutex
-	client   *Client
+	quicSvcMu sync.Mutex
+	quicSvc   *quicService
 )
 
-func getClient(ctx context.Context) (*Client, error) {
-	clientMu.Lock()
-	defer clientMu.Unlock()
+func InitQuicService(ctx context.Context) error{
+	quicSvcMu.Lock()
+	defer quicSvcMu.Unlock()
 
-	if client != nil {
-		return client, nil
+	if quicSvc != nil {
+		return nil // already initialized
 	}
 
-	// IMPORTANT: use Background for dialing
+	clientCtx, clientCancel := context.WithCancel(ctx)
+
+	// IMPORTANT: use context with timeout for dial
+	dialCtx, dialCancel := context.WithTimeout(context.Background(), constants.QuicDialTimeout)
+	defer dialCancel()
 	conn, err := quic.DialAddr(
-		context.Background(),
-		"127.0.0.1:4242",
+		dialCtx,
+		constants.PublicBootstrapUrl,
 		clientTLSConfig(),
 		clientQuicConfig(),
 	)
 	if err != nil {
-		logger.Error("quic dial failed: " + err.Error())
-		return nil, err
+		clientCancel()
+		return err
 	}
 
 	logger.Debug("quic connection established")
-
-	client = &Client{conn: conn}
-
-	go func() {
-		<-ctx.Done()
-		logger.Warn("closing quic connection")
-		conn.CloseWithError(0, "client exiting")
-
-		clientMu.Lock()
-		client = nil // allow reconnect
-		clientMu.Unlock()
-	}()
-
-	return client, nil
-}
-
-
-func Get(ctx context.Context, path string, headers map[string]string) (*types.Response, error) {
-	c, err := getClient(ctx)
-	if err != nil {
-		return errorResponse(err), nil
+	
+	quicSvc = &quicService{
+		conn: conn,
+		ctx: clientCtx,
+		cancel: clientCancel,
 	}
-	return c.get(ctx, path, headers)
+	quicSvc.watchLifecycle()
+	return nil
 }
 
-func (c *Client) get(ctx context.Context, path string, headers map[string]string) (*types.Response, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (q *quicService) watchLifecycle() {
+    go func() {
+        select {
+        case <-q.ctx.Done():
+            // daemon shutdown
+            logger.Warn("daemon shutting down, closing quic")
+            q.conn.CloseWithError(0, "daemon shutdown")
 
-	stream, err := c.conn.OpenStreamSync(ctx)
+        case <-q.conn.Context().Done():
+            // QUIC-owned close (idle timeout, peer close, reset)
+            logger.Warn("quic connection closed: " + q.conn.Context().Err().Error())
+        }
+
+        quicSvcMu.Lock()
+        quicSvc = nil
+        quicSvcMu.Unlock()
+    }()
+}
+
+
+func Get(path string, headers map[string]string) (*types.Response, error) {
+	if quicSvc == nil {
+		return errorResponse(fmt.Errorf("connection is closed")), fmt.Errorf("connection is closed")
+	}
+	return quicSvc.get(path, headers)
+}
+
+func (q *quicService) get(path string, headers map[string]string) (*types.Response, error) {
+	streamCtx, streamCancel := context.WithTimeout(q.ctx, constants.QuicStreamTimeout)
+	defer streamCancel()
+	stream, err := q.conn.OpenStreamSync(streamCtx)
 	if err != nil {
 		return errorResponse(err), err
 	}
@@ -97,27 +115,18 @@ func (c *Client) get(ctx context.Context, path string, headers map[string]string
 
 
 // main post function which every code calls
-func Post(ctx context.Context, path string, headers map[string]string, body []byte) (*types.Response, error) {
-	c, err := getClient(ctx)
-	if err != nil {
-		logger.Debug("some error - client.go - 103")
-		return errorResponse(err), nil
+func Post(path string, headers map[string]string, body []byte) (*types.Response, error) {
+	if quicSvc == nil {
+		return errorResponse(fmt.Errorf("connection is closed")), fmt.Errorf("connection is closed")
 	}
-	logger.Debug("client get - client.go - 105")
-	return c.post(ctx, path, headers, body)
+	return quicSvc.post(path, headers, body)
 }
 
-func (c *Client) post(ctx context.Context, path string, headers map[string]string, body []byte) (*types.Response, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.conn == nil{
-		logger.Debug("conn is nil")
-	}
-	stream, err := c.conn.OpenStreamSync(ctx)
+func (q *quicService) post(path string, headers map[string]string, body []byte) (*types.Response, error) {
+	streamCtx, streamCancel := context.WithTimeout(q.ctx, constants.QuicStreamTimeout)
+	defer streamCancel()
+	stream, err := q.conn.OpenStreamSync(streamCtx)
 	if err != nil {
-		logger.Debug("some error - client - 116")
-		logger.Error(err.Error())
 		return errorResponse(err), err
 	}
 	defer stream.Close()
@@ -142,16 +151,6 @@ func (c *Client) post(ctx context.Context, path string, headers map[string]strin
 }
 
 
-func errorResponse(err error) *types.Response {
-	return &types.Response{
-		StatusCode: 0,
-		Message:    err.Error(),
-		Headers:    map[string]string{},
-		Body:       nil,
-	}
-}
-
-
 func clientTLSConfig() *tls.Config {
 	return &tls.Config{
 		InsecureSkipVerify: true,
@@ -161,6 +160,6 @@ func clientTLSConfig() *tls.Config {
 
 func clientQuicConfig() *quic.Config{
 	return &quic.Config{
-		MaxIdleTimeout: 60 * time.Minute,
+		MaxIdleTimeout: constants.QuicTimeout,
 	}
 }

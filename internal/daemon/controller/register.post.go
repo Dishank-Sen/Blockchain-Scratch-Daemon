@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/quic"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 )
 
 type registerBody struct {
@@ -31,8 +32,11 @@ func RegisterController(ctx context.Context, req *types.Request) (*types.Respons
 	// }
 
 	// return resp, nil
+	go func ()  {
+		<-ctx.Done()
+		logger.Debug("register.post.go - 37 - context cancelled")
+	}()
 	return quic.Post(
-		ctx,
 		"/register",
 		req.Headers,
 		req.Body,
