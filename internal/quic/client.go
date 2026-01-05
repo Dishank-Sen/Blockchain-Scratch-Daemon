@@ -39,7 +39,7 @@ func InitQuicService(ctx context.Context) error{
 	defer dialCancel()
 	conn, err := quic.DialAddr(
 		dialCtx,
-		constants.LocalBootstrapUrl,
+		constants.PublicBootstrapUrl,
 		clientTLSConfig(),
 		clientQuicConfig(),
 	)
