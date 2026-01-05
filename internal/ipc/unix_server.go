@@ -138,7 +138,7 @@ func (s *unixServer) dispatch(ctx context.Context, req *types.Request) (*types.R
 	s.mu.RUnlock()
 
 	if !ok {
-		logger.Debug("server.go - 135")
+		// logger.Debug("server.go - 135")
 		return &types.Response{
 			StatusCode: 404,
 			Message:    "Not Found",
@@ -147,12 +147,12 @@ func (s *unixServer) dispatch(ctx context.Context, req *types.Request) (*types.R
 	}
 
 	resp, err := h(ctx, req)  // IMPORTANT LINE
-	logger.Debug("uni_server.go - 147")
-	logger.Debug(resp.Message)
-	logger.Debug(string(resp.Body))
+	// logger.Debug("uni_server.go - 147")
+	// logger.Debug(resp.Message)
+	// logger.Debug(string(resp.Body))
 
 	if err != nil {
-		logger.Debug("server.go - 148")
+		// logger.Debug("server.go - 148")
 		logger.Error(err.Error())
 		return resp, err
 	}

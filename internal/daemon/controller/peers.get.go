@@ -9,7 +9,6 @@ import (
 
 func PeersController(ctx context.Context, req *types.Request) (*types.Response, error){
 	return quic.Get(
-		ctx,
 		"/peers",
 		req.Headers,
 	)

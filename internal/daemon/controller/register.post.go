@@ -37,7 +37,6 @@ func RegisterController(ctx context.Context, req *types.Request) (*types.Respons
 		logger.Debug("register.post.go - 37 - context cancelled")
 	}()
 	return quic.Post(
-		ctx,
 		"/register",
 		req.Headers,
 		req.Body,

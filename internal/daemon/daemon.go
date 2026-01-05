@@ -3,10 +3,12 @@ package daemon
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	customerrors "github.com/Dishank-Sen/Blockchain-Scratch-Daemon/customErrors"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/daemon/controller"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/ipc"
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/quic"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 )
 
@@ -39,6 +41,12 @@ func (d *Daemon) Run() error{
 		<-d.ctx.Done()
 		logger.Info("daemon shutting down..")
 	}()
+
+	if err := quic.InitQuicService(d.ctx); err != nil{
+		logger.Error(fmt.Sprintf("error in initializing quic service: %v", err))
+		d.cancel()
+		return err
+	}
 
 	// listens for the socket connection requests
 	server := d.server
