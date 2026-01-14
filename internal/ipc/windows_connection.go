@@ -51,13 +51,7 @@ func (c *windowsConnection) Handle() error {
 		return err
 	}
 
-	resp, err := c.server.dispatch(c.daemonCtx, req)
-	if err != nil {
-		if rerr := writeResponse(c.conn, resp); rerr != nil {
-			return rerr
-		}
-		return err
-	}
+	resp := c.server.dispatch(req)
 
 	return writeResponse(c.conn, resp)
 }

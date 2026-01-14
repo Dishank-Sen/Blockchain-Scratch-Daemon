@@ -91,7 +91,7 @@ func (s *windowsServer) Post(endpoint string, h HandlerFunc) {
 	s.routes[routeKey{method: "POST", path: endpoint}] = h
 }
 
-func (s *windowsServer) dispatch(ctx context.Context, req *types.Request) (*types.Response, error) {
+func (s *windowsServer) dispatch(req *types.Request) *types.Response {
 	s.mu.RLock()
 	h, ok := s.routes[routeKey{method: req.Method, path: req.Path}]
 	s.mu.RUnlock()
@@ -101,8 +101,8 @@ func (s *windowsServer) dispatch(ctx context.Context, req *types.Request) (*type
 			StatusCode: 404,
 			Message:    "Not Found",
 			Body:       []byte("route not found"),
-		}, nil
+		}
 	}
 
-	return h(ctx, req)
+	return h(req)
 }
