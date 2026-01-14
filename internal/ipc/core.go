@@ -1,14 +1,13 @@
 package ipc
 
 import (
-	"context"
 	"fmt"
 	"net"
 
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
 )
 
-type HandlerFunc func(ctx context.Context, req *types.Request) (*types.Response, error)
+type HandlerFunc func(req *types.Request) *types.Response
 
 type routeKey struct {
 	method string

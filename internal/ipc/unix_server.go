@@ -125,7 +125,7 @@ func (s *unixServer) Post(endpoint string, h HandlerFunc){
 	s.mu.Unlock()
 }
 
-func (s *unixServer) dispatch(ctx context.Context, req *types.Request) (*types.Response, error) {
+func (s *unixServer) dispatch(req *types.Request) *types.Response {
 	// logger.Debug("server.go - 96")
 	// logger.Debug(req.Path)
 	key := routeKey{
@@ -143,20 +143,9 @@ func (s *unixServer) dispatch(ctx context.Context, req *types.Request) (*types.R
 			StatusCode: 404,
 			Message:    "Not Found",
 			Body:       []byte("route not found"),
-		}, nil
+		}
 	}
 
-	resp, err := h(ctx, req)  // IMPORTANT LINE
-	// logger.Debug("uni_server.go - 147")
-	// logger.Debug(resp.Message)
-	// logger.Debug(string(resp.Body))
-
-	if err != nil {
-		// logger.Debug("server.go - 148")
-		logger.Error(err.Error())
-		return resp, err
-	}
-
-	return resp, nil
+	return h(req)
 }
 

@@ -45,16 +45,7 @@ func (c *unixConnection) Handle() error{
 		return err
 	}
 
-	resp, err := c.server.dispatch(c.daemonCtx, req)  // IMPORTANT: DON'T PUT RANDOM CONTEXT IN THIS AS THIS RESULTS IN CLOSING OF QUIC CONNECTION
-	if err != nil{
-		// logger.Debug("connection.go - 49")
-		logger.Error(err.Error())
-		// logger.Debug("writing response - connection.go - 51")
-		if rerr := writeResponse(c.conn, resp); rerr != nil{
-			return rerr
-		}
-		return err
-	}
+	resp := c.server.dispatch(req)
 
 	return writeResponse(c.conn, resp)
 }
