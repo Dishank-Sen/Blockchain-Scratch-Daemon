@@ -3,7 +3,7 @@ module github.com/Dishank-Sen/Blockchain-Scratch-Daemon
 go 1.25.0
 
 require (
-	github.com/Dishank-Sen/quicnode v0.1.2
+	github.com/Dishank-Sen/quicnode v0.0.3
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/quic-go/quic-go v0.58.0
 )
@@ -13,5 +13,3 @@ require (
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 )
-
-replace github.com/Dishank-Sen/quicnode => ../../quicnode
