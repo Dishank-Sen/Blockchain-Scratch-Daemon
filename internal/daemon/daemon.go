@@ -101,7 +101,7 @@ func (d *Daemon) Run() error{
 		if err := d.initHeartbeat(addr); err != nil{
 			logger.Error(fmt.Sprintf("error in heartbeat: %v", err))
 		}
-	}(constants.LocalBootstrapUrl)
+	}(constants.PublicBootstrapUrl)
 
 	// listens for the socket connection requests
 	server := d.server
