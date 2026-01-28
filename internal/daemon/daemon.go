@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
 	customerrors "github.com/Dishank-Sen/Blockchain-Scratch-Daemon/customErrors"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/ipc"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
@@ -21,9 +23,21 @@ type Daemon struct{
 }
 
 func NewDaemon(ctx context.Context, addr string) (*Daemon, error) {
+	if ctx == nil{
+		return nil, fmt.Errorf("context is nil")
+	}
+
+	if err := validateAddr(addr); err != nil{
+		return nil, err
+	}
+	
 	daemonCtx, daemonCancel := context.WithCancel(ctx)
 
-	cfg := getConfig(addr)
+	cfg, err := getConfig(addr)
+	if err != nil{
+		daemonCancel()
+		return nil, err
+	}
 	n, err := node.NewNode(daemonCtx, cfg)
 	if err != nil{
 		logger.Debug("error in getting new node")
@@ -46,21 +60,32 @@ func NewDaemon(ctx context.Context, addr string) (*Daemon, error) {
 		addr: addr,
 	}
 
+	go func(ctx context.Context) {
+		<- ctx.Done()
+		logger.Info("daemon context cancelled")
+		daemon.stop()
+	}(daemonCtx)
 	return daemon, nil
 }
 
+func validateAddr(addr string) error{
+	if addr == ""{
+		return fmt.Errorf("addr is empty")
+	}
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil{
+		return err
+	}
+	if port == ""{
+		return fmt.Errorf("no port specified")
+	}
+	return nil
+}
+
 func (d *Daemon) Run() error{
-	go func() {
-		<-d.ctx.Done()
-		logger.Info("daemon shutting down..")
-	}()
-
-	// if err := quic.InitQuicService(d.ctx); err != nil{
-	// 	logger.Error(fmt.Sprintf("error in initializing quic service: %v", err))
-	// 	d.cancel()
-	// 	return err
-	// }
-
+	if d.node == nil{
+		return fmt.Errorf("node is not defined, it is nil")
+	}
 	// start node
 	if err := d.node.Start(); err != nil{
 		logger.Error(fmt.Sprintf("error while starting node: %v", err))
@@ -72,6 +97,11 @@ func (d *Daemon) Run() error{
 	logger.Info("node started")
 
 	go d.handleNodeRoutes()
+	go func (addr string){
+		if err := d.initHeartbeat(addr); err != nil{
+			logger.Error(fmt.Sprintf("error in heartbeat: %v", err))
+		}
+	}(constants.LocalBootstrapUrl)
 
 	// listens for the socket connection requests
 	server := d.server
@@ -88,4 +118,12 @@ func (d *Daemon) Run() error{
 		return err
 	}
 	return nil
+}
+
+func (d *Daemon) stop(){
+	if err := d.node.Stop(); err != nil{
+		logger.Error(err.Error())
+	}
+
+	d.cancel()
 }

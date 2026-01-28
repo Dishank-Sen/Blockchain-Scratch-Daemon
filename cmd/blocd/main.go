@@ -53,17 +53,18 @@ func defaultLogPath() string {
 func main(){
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	addr := ":4001"
+	addr := ":4000"
 	daemon, err := daemon.NewDaemon(ctx, addr)
 	if err != nil{
 		logger.Error(fmt.Sprintf("new daemon error: %v", err))
 		stop()
 	}
-	logger.Info("Daemon started..")
+	logger.Info("Daemon starting..")
 
 	// blocking code
 	if err := daemon.Run(); err != nil{
 		logger.Error(fmt.Sprintf("error while running daemon: %v", err))
+		logger.Info("can't able to start daemon")
 		stop()
 	}
 }

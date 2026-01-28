@@ -25,6 +25,7 @@ func (h *Handler) ConnectController(req *types.Request) *types.Response {
 	n := h.node
 
 	// returns peer list in body
+	logger.Debug("dialing....")
 	resp, err := n.Dial(constants.PublicBootstrapUrl, "connect", req.Headers, req.Body)
 
 	if err != nil || resp.StatusCode != 200{
@@ -80,16 +81,16 @@ func peerExists(body []byte) bool{
 }
 
 func (h *Handler) connectToPeer(p []peersList) bool{
-	for _, peer := range p{
-		logger.Debug("dialing...")
-		resp, err := h.node.Dial(peer.Addr, "ping", nil, []byte("ping"))
-		if err != nil{
-			logger.Debug("some error while dialing")
-			logger.Error(err.Error())
-			continue
-		}
-		logger.Debug(string(resp.Body))
-		return true
-	}
+	// for _, peer := range p{
+	// 	logger.Debug("dialing...")
+	// 	resp, err := h.node.Dial(peer.Addr, "ping", nil, []byte("ping"))
+	// 	if err != nil{
+	// 		logger.Debug("some error while dialing")
+	// 		logger.Error(err.Error())
+	// 		continue
+	// 	}
+	// 	logger.Debug(string(resp.Body))
+	// 	return true
+	// }
 	return false
 }
