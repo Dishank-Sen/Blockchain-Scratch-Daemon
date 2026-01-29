@@ -7,4 +7,5 @@ func (d *Daemon) handleNodeRoutes(){
 	handler := nodehandler.NewNodeHandler(n)
 	n.Handle("ping", handler.Ping)
 	n.Handle("peer-info", handler.PeerInfo)
+	n.Handle("peer-side", handler.PeerSide)
 }
