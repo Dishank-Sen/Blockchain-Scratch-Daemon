@@ -4,6 +4,7 @@ import nodehandler "github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/da
 
 func (d *Daemon) handleNodeRoutes(){
 	n := d.node
-
-	n.Handle("ping", nodehandler.Ping)
+	handler := nodehandler.NewNodeHandler(n)
+	n.Handle("ping", handler.Ping)
+	n.Handle("peer-info", handler.PeerInfo)
 }

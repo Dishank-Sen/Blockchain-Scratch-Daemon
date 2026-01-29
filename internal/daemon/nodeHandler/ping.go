@@ -2,7 +2,7 @@ package nodehandler
 
 import "github.com/Dishank-Sen/quicnode/types"
 
-func Ping(req *types.Request) *types.Response{
+func (h *Handler) Ping(req *types.Request) *types.Response{
 	return &types.Response{
 		StatusCode: 200,
 		Message: "ok",
