@@ -84,7 +84,7 @@ func (h *Handler) connectToPeer(p []peersList) bool{
 	for _, peer := range p{
 		logger.Debug("dialing peer...")
 		for range 5{
-			resp, err := h.node.Dial(peer.Addr, "ping", nil, []byte("ping"))
+			resp, err := h.node.Dial(peer.Addr, "peer-side", nil, []byte("text from peer"))
 			if err != nil{
 				logger.Debug("some error while dialing")
 				logger.Error(err.Error())
