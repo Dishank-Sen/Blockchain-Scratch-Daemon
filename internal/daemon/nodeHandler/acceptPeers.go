@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 	"github.com/Dishank-Sen/quicnode/types"
 )
@@ -14,18 +15,21 @@ type payload struct{
 	Addr string `json:"addr"`
 }
 
-func (h *Handler) PeerInfo(req *types.Request) *types.Response{
-	var pl payload
-	if err := json.Unmarshal(req.Body, &pl); err != nil{
+func (h *Handler) AcceptPeers(req *types.Request) *types.Response{
+	var p payload
+	if err := json.Unmarshal(req.Body, &p); err != nil{
 		return errorRes()
 	}
-	logger.Info(pl.Addr)
-	logger.Info(pl.ID)
+	id, err := utils.GetID()
+	if err != nil{
+		logger.Error(err.Error())
+	}
+
 	time.Sleep(3*time.Second)
 
 	for range 5{
-		logger.Debug("dialing...")
-		resp, err := h.node.Dial(pl.Addr, "peer-side", nil, fmt.Appendf(nil, "dialed %s", pl.ID))
+		logger.Debug(fmt.Sprintf("sending accept request to %s", p.ID))
+		resp, err := h.node.Dial(p.Addr, "accept-request", nil, fmt.Appendf(nil, "accept request from %s", id))
 		if err != nil{
 			logger.Error(err.Error())
 			continue
@@ -37,13 +41,18 @@ func (h *Handler) PeerInfo(req *types.Request) *types.Response{
 			// }
 		}
 		logger.Info(string(resp.Body))
-		break
+		return &types.Response{
+			StatusCode: 200,
+			Message: "ok",
+			Headers: nil,
+			Body: []byte("accept request successfull"),
+		}
 	}
 	return &types.Response{
-		StatusCode: 200,
-		Message: "ok",
+		StatusCode: 500,
+		Message: "Error",
 		Headers: nil,
-		Body: []byte("got response from another peer"),
+		Body: []byte("accept request not successfull"),
 	}
 }
 

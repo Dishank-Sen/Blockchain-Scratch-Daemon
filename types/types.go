@@ -21,3 +21,7 @@ type StreamMessage struct{
     Length  uint32 `json:"length"`
     Body []byte `json:"body"`
 }
+
+type Metadata struct{
+	ID string `json:"id"`
+}

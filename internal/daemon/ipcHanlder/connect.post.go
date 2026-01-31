@@ -2,8 +2,11 @@ package ipchanlder
 
 import (
 	"encoding/json"
+	"fmt"
+
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 )
 
@@ -21,11 +24,20 @@ func (h *Handler) ConnectController(req *types.Request) *types.Response {
 	if err := json.Unmarshal(req.Body, &body); err != nil {
 		return nil
 	}
+	if err := utils.SaveID(body.ID); err != nil{
+		logger.Error(err.Error())
+		return &types.Response{
+			StatusCode: 500,
+			Message: "Error",
+			Headers: nil,
+			Body: []byte("not able to save id"),
+		}
+	}
 
 	n := h.node
 
 	// returns peer list in body
-	logger.Debug("dialing....")
+	logger.Debug("dialing (connect)")
 	resp, err := n.Dial(constants.PublicBootstrapUrl, "connect", req.Headers, req.Body)
 
 	if err != nil || resp.StatusCode != 200{
@@ -82,12 +94,13 @@ func peerExists(body []byte) bool{
 
 func (h *Handler) connectToPeer(p []peersList) bool{
 	for _, peer := range p{
-		logger.Debug("dialing peer...")
+		logger.Debug(fmt.Sprintf("connecting to peer %s %s", peer.ID, peer.Addr))
 		for range 5{
-			resp, err := h.node.Dial(peer.Addr, "peer-side", nil, []byte("text from peer"))
+			i := 1
+			logger.Debug(fmt.Sprintf("attempt %v", i))
+			resp, err := h.node.Dial(peer.Addr, "connect-request", nil, fmt.Appendf(nil, "connect request from %s", peer.ID))
 			if err != nil{
-				logger.Debug("some error while dialing")
-				logger.Error(err.Error())
+				logger.Error(fmt.Sprintf("error in connecting: %v", err))
 				continue
 			}
 			logger.Debug(string(resp.Body))
