@@ -16,6 +16,7 @@ type payload struct{
 }
 
 func (h *Handler) AcceptPeers(req *types.Request) *types.Response{
+	logger.Info("accept-peer handler :)")
 	var p payload
 	if err := json.Unmarshal(req.Body, &p); err != nil{
 		return errorRes()
@@ -25,20 +26,19 @@ func (h *Handler) AcceptPeers(req *types.Request) *types.Response{
 		logger.Error(err.Error())
 	}
 
-	time.Sleep(3*time.Second)
+	time.Sleep(1*time.Second)
+	baseDelay := time.Second
 
-	for range 5{
+	for i := 0; i < 5; i++{
 		logger.Debug(fmt.Sprintf("sending accept request to %s", p.ID))
 		resp, err := h.node.Dial(p.Addr, "accept-request", nil, fmt.Appendf(nil, "accept request from %s", id))
 		if err != nil{
 			logger.Error(err.Error())
+			// exponential backoff
+            delay := baseDelay * (1 << i) // 1s,2s,4s,8s,16s
+            logger.Debug(fmt.Sprintf("retrying in %v", delay))
+            time.Sleep(delay)
 			continue
-			// return &types.Response{
-			// 	StatusCode: 500,
-			// 	Message: "Error",
-			// 	Headers: nil,
-			// 	Body: []byte("not able to connect to another peer"),
-			// }
 		}
 		logger.Info(string(resp.Body))
 		return &types.Response{

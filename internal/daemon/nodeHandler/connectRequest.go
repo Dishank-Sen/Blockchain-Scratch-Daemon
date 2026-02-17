@@ -9,6 +9,7 @@ import (
 )
 
 func (h *Handler) ConnectRequest(req *types.Request) *types.Response{
+	logger.Info("connect-request handler :)")
 	logger.Info(string(req.Body))
 	id, err := utils.GetID()
 	if err != nil{

@@ -5,7 +5,7 @@ import "time"
 const(
 	SocketPath = "/tmp/blocd.sock"
 	WindowsPipeName = `\\.\pipe\blockchain-scratch`
-	PublicBootstrapUrl = "98.92.130.227:4242"
+	PublicBootstrapUrl = "3.216.36.215:4242"
 	LocalBootstrapUrl = "127.0.0.1:4242"
 	DockerBootstrapUrl = "host.docker.internal:4242"
 	MaxIdleTimeout = 30*time.Second

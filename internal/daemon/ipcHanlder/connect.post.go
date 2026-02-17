@@ -3,6 +3,7 @@ package ipchanlder
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
@@ -92,20 +93,34 @@ func peerExists(body []byte) bool{
 	return true
 }
 
-func (h *Handler) connectToPeer(p []peersList) bool{
-	for _, peer := range p{
-		logger.Debug(fmt.Sprintf("connecting to peer %s %s", peer.ID, peer.Addr))
-		for range 5{
-			i := 1
-			logger.Debug(fmt.Sprintf("attempt %v", i))
-			resp, err := h.node.Dial(peer.Addr, "connect-request", nil, fmt.Appendf(nil, "connect request from %s", peer.ID))
-			if err != nil{
-				logger.Error(fmt.Sprintf("error in connecting: %v", err))
-				continue
-			}
-			logger.Debug(string(resp.Body))
-			return true
-		}
-	}
-	return false
+func (h *Handler) connectToPeer(p []peersList) bool {
+    for _, peer := range p {
+        logger.Debug(fmt.Sprintf("connecting to peer %s %s", peer.ID, peer.Addr))
+
+        baseDelay := time.Second
+
+        for i := 0; i < 5; i++ {
+            logger.Debug(fmt.Sprintf("attempt %d", i+1))
+
+            resp, err := h.node.Dial(
+                peer.Addr,
+                "connect-request",
+                nil,
+                fmt.Appendf(nil, "connect request from %s", h.ID),
+            )
+
+            if err == nil && resp.StatusCode == 200 {
+                logger.Debug("connection successful")
+                return true
+            }
+
+            logger.Error("connection failed")
+
+            // exponential backoff
+            delay := baseDelay * (1 << i) // 1s,2s,4s,8s,16s
+            logger.Debug(fmt.Sprintf("retrying in %v", delay))
+            time.Sleep(delay)
+        }
+    }
+    return false
 }
