@@ -1,9 +1,11 @@
 package nodehandler
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 	"github.com/Dishank-Sen/quicnode/node"
 )
@@ -18,8 +20,26 @@ func NewNodeHandler(node *node.Node) *Handler{
 	}
 }
 
+type heartbeatPayload struct {
+	ID string `json:"id"`
+}
+
 func (h *Handler) initHeartbeat(addr string) error{
-	resp, err := h.node.Dial(addr, "heartbeat", nil, nil)
+	id, err := utils.GetID()
+	if err != nil{
+		return err
+	}
+
+	hb := &heartbeatPayload{
+		ID: id,
+	}
+
+	byteData, err := json.Marshal(hb)
+	if err != nil{
+		return err
+	}
+
+	resp, err := h.node.Dial(addr, "heartbeat", nil, byteData)
 	if err != nil{
 		return err
 	}

@@ -1,14 +1,34 @@
 package daemon
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 )
 
+type heartbeatPayload struct {
+	ID string `json:"id"`
+}
+
 func (d *Daemon) initHeartbeat(addr string) error{
-	resp, err := d.node.Dial(addr, "heartbeat", nil, nil)
+	id, err := utils.GetID()
+	if err != nil{
+		return err
+	}
+
+	hb := &heartbeatPayload{
+		ID: id,
+	}
+
+	byteData, err := json.Marshal(hb)
+	if err != nil{
+		return err
+	}
+
+	resp, err := d.node.Dial(addr, "heartbeat", nil, byteData)
 	if err != nil{
 		return err
 	}
