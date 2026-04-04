@@ -1,6 +1,7 @@
 package nodehandler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -15,7 +16,7 @@ type payload struct{
 	Addr string `json:"addr"`
 }
 
-func (h *Handler) AcceptPeers(req *types.Request) *types.Response{
+func (h *Handler) AcceptPeers(ctx context.Context, req *types.Request) *types.Response{
 	logger.Info("accept-peer handler :)")
 	var p payload
 	if err := json.Unmarshal(req.Body, &p); err != nil{

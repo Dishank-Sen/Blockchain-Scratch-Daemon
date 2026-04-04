@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/Microsoft/go-winio"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
 	customerrors "github.com/Dishank-Sen/Blockchain-Scratch-Daemon/customErrors"
@@ -22,11 +23,12 @@ type windowsServer struct {
 	daemonCtx context.Context
 	ctx      context.Context
 	cancel   context.CancelFunc
+	group   *errgroup.Group
 	routes   map[routeKey]HandlerFunc
 	mu       sync.RWMutex
 }
 
-func newWindowsServer(ctx context.Context) (*windowsServer, error) {
+func newWindowsServer(ctx context.Context, g *errgroup.Group) (*windowsServer, error) {
 	ipcCtx, ipcCancel := context.WithCancel(ctx)
 
 	ln, err := winio.ListenPipe(
@@ -47,6 +49,7 @@ func newWindowsServer(ctx context.Context) (*windowsServer, error) {
 		daemonCtx: ctx,
 		ctx:      ipcCtx,
 		cancel:   ipcCancel,
+		group:    g,
 		routes:   make(map[routeKey]HandlerFunc),
 	}, nil
 }

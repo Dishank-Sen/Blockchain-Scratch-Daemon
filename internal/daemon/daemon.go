@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
 	customerrors "github.com/Dishank-Sen/Blockchain-Scratch-Daemon/customErrors"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/ipc"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 	"github.com/Dishank-Sen/quicnode/node"
+	"golang.org/x/sync/errgroup"
 )
 
 type Daemon struct{
@@ -19,6 +19,8 @@ type Daemon struct{
 	server ipc.Server
 	ctx context.Context
 	cancel context.CancelFunc
+	group *errgroup.Group
+	gctx context.Context
 	addr string
 }
 
@@ -31,6 +33,7 @@ func NewDaemon(ctx context.Context, addr string) (*Daemon, error) {
 		return nil, err
 	}
 	
+	g, gctx := errgroup.WithContext(ctx)
 	daemonCtx, daemonCancel := context.WithCancel(ctx)
 
 	cfg, err := getConfig(addr)
@@ -45,7 +48,7 @@ func NewDaemon(ctx context.Context, addr string) (*Daemon, error) {
 		return nil, err
 	}
 
-	server, err := ipc.NewServer(daemonCtx)
+	server, err := ipc.NewServer(daemonCtx, g)
 	if err != nil{
 		// logger.Debug("ipc error")
 		daemonCancel()
@@ -57,14 +60,11 @@ func NewDaemon(ctx context.Context, addr string) (*Daemon, error) {
 		server: server,
 		ctx: daemonCtx,
 		cancel: daemonCancel,
+		group: g,
+		gctx: gctx,
 		addr: addr,
 	}
 
-	go func(ctx context.Context) {
-		<- ctx.Done()
-		logger.Info("daemon context cancelled")
-		daemon.stop()
-	}(daemonCtx)
 	return daemon, nil
 }
 
@@ -83,9 +83,15 @@ func validateAddr(addr string) error{
 }
 
 func (d *Daemon) Run() error{
+	d.group.Go(func() error{
+		<-d.ctx.Done()
+		return d.node.Stop()
+	})
+
 	if d.node == nil{
 		return fmt.Errorf("node is not defined, it is nil")
 	}
+	
 	// start node
 	if err := d.node.Start(); err != nil{
 		logger.Error(fmt.Sprintf("error while starting node: %v", err))
@@ -96,20 +102,20 @@ func (d *Daemon) Run() error{
 
 	logger.Info("node started")
 
-	go d.handleNodeRoutes()
-	go func (addr string){
-		if err := d.initHeartbeat(addr); err != nil{
-			logger.Error(fmt.Sprintf("error in heartbeat: %v", err))
-		}
-	}(constants.PublicBootstrapUrl)
-
-	// listens for the socket connection requests
-	server := d.server
-
-	go d.handleIpcRoutes()
+	d.group.Go(func() error{
+		return d.node.Wait()
+	})
+	d.group.Go(func() error{
+		d.handleNodeRoutes()
+		return nil
+	})
+	d.group.Go(func() error{
+		d.handleIpcRoutes()
+		return nil
+	})
 
 	// blocks here
-	if err := server.Listen(); err != nil{
+	if err := d.server.Listen(); err != nil{
 		logger.Debug("error in listening")
 		if errors.Is(err, customerrors.ErrServerShutdown){
 			logger.Info("server stopped listening")
@@ -118,12 +124,4 @@ func (d *Daemon) Run() error{
 		return err
 	}
 	return nil
-}
-
-func (d *Daemon) stop(){
-	if err := d.node.Stop(); err != nil{
-		logger.Error(err.Error())
-	}
-
-	d.cancel()
 }

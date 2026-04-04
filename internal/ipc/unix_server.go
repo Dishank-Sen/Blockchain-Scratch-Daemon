@@ -1,4 +1,5 @@
 //go:build !windows
+
 package ipc
 
 import (
@@ -7,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+
 	// "strings"
 	"sync"
 	"time"
@@ -15,6 +17,7 @@ import (
 	customerrors "github.com/Dishank-Sen/Blockchain-Scratch-Daemon/customErrors"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 type unixServer struct {
@@ -22,11 +25,12 @@ type unixServer struct {
 	daemonCtx  context.Context
 	ctx        context.Context
 	cancel     context.CancelFunc
+	group     *errgroup.Group
 	routes     map[routeKey]HandlerFunc
 	mu         sync.RWMutex
 }
 
-func newUnixServer(ctx context.Context) (*unixServer, error) {
+func newUnixServer(ctx context.Context, g *errgroup.Group) (*unixServer, error) {
 	ipcCtx, ipcCancel := context.WithCancel(ctx)
 
 	if err := os.RemoveAll(constants.SocketPath); err != nil {
@@ -44,6 +48,7 @@ func newUnixServer(ctx context.Context) (*unixServer, error) {
 		daemonCtx:  ctx,
 		ctx:        ipcCtx,
 		cancel:     ipcCancel,
+		group:      g,
 		routes:     make(map[routeKey]HandlerFunc),
 	}
 
@@ -51,11 +56,11 @@ func newUnixServer(ctx context.Context) (*unixServer, error) {
 }
 
 func (s *unixServer) Listen() error{
-	go func ()  {
+	s.group.Go(func() error{
 		<-s.ctx.Done()
-		logger.Warn("server closing..")
-		s.listener.Close()
-	}()
+		logger.Warn("ipc server closing")
+		return s.listener.Close()
+	})
 
 	for{
 		conn, err := s.listener.Accept() // blocking
@@ -74,43 +79,32 @@ func (s *unixServer) Listen() error{
 		}
 		logger.Debug("new connection")
 
-		go func (c net.Conn)  {
-			conn := newUnixConnection(s, c)
-			if err := conn.Handle(); err != nil{
-				logger.Warn(fmt.Sprintf("conn error: %v", err))
-				// if isTimeoutError(err){
-				// 	logger.Error("bootstrap connection timed out")
-				// 	go s.cancel()
-				// }
-				go s.cancel()
-			}
-		}(conn)
+		s.group.Go(func() error{
+			conn := newUnixConnection(s, conn)
+			// if err := conn.Handle(); err != nil{
+			// 	// logger.Warn(fmt.Sprintf("conn error: %v", err))
+			// 	// if isTimeoutError(err){
+			// 	// 	logger.Error("bootstrap connection timed out")
+			// 	// 	go s.cancel()
+			// 	// }
+			// 	// go s.cancel()
+			// 	return fmt.Errorf(fmt.Sprintf("ipc connection error: %v", err))
+			// }
+			return conn.Handle()
+		})
+		// go func (c net.Conn)  {
+		// 	conn := newUnixConnection(s, c)
+		// 	if err := conn.Handle(); err != nil{
+		// 		logger.Warn(fmt.Sprintf("conn error: %v", err))
+		// 		// if isTimeoutError(err){
+		// 		// 	logger.Error("bootstrap connection timed out")
+		// 		// 	go s.cancel()
+		// 		// }
+		// 		go s.cancel()
+		// 	}
+		// }(conn)
 	}
 }
-
-// func isTimeoutError(err error) bool {
-// 	if err == nil {
-// 		return false
-// 	}
-
-// 	// 1. Context deadline
-// 	if errors.Is(err, context.DeadlineExceeded) {
-// 		return true
-// 	}
-
-// 	// 2. net.Error timeout
-// 	var netErr net.Error
-// 	if errors.As(err, &netErr) && netErr.Timeout() {
-// 		return true
-// 	}
-
-// 	// 3. quic-go idle timeout (fallback)
-// 	if strings.Contains(err.Error(), "no recent network activity") {
-// 		return true
-// 	}
-
-// 	return false
-// }
 
 
 func (s *unixServer) Get(endpoint string, h HandlerFunc){

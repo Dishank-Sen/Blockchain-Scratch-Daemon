@@ -41,8 +41,18 @@ func (h *Handler) ConnectController(req *types.Request) *types.Response {
 	logger.Debug("dialing (connect)")
 	resp, err := n.Dial(constants.PublicBootstrapUrl, "connect", req.Headers, req.Body)
 
-	if err != nil || resp.StatusCode != 200{
+	if err != nil {
 		logger.Error(err.Error())
+		return &types.Response{
+			StatusCode: 500,
+			Message: "Error",
+			Headers: nil,
+			Body: []byte("can't able to register node"),
+		}
+	}
+	
+	if resp.StatusCode != 200{
+		logger.Error(fmt.Sprintf("bootstrap returned non-200 status: %d", resp.StatusCode))
 		return &types.Response{
 			StatusCode: 500,
 			Message: "Error",

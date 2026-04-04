@@ -1,8 +1,12 @@
 package nodehandler
 
-import "github.com/Dishank-Sen/quicnode/types"
+import (
+	"context"
 
-func (h *Handler) Ping(req *types.Request) *types.Response{
+	"github.com/Dishank-Sen/quicnode/types"
+)
+
+func (h *Handler) Ping(ctx context.Context, req *types.Request) *types.Response{
 	return &types.Response{
 		StatusCode: 200,
 		Message: "ok",

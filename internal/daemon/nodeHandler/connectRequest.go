@@ -1,6 +1,7 @@
 package nodehandler
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils"
@@ -8,7 +9,7 @@ import (
 	"github.com/Dishank-Sen/quicnode/types"
 )
 
-func (h *Handler) ConnectRequest(req *types.Request) *types.Response{
+func (h *Handler) ConnectRequest(ctx context.Context, req *types.Request) *types.Response{
 	logger.Info("connect-request handler :)")
 	logger.Info(string(req.Body))
 	id, err := utils.GetID()

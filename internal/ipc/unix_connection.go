@@ -30,11 +30,11 @@ func newUnixConnection(server *unixServer, conn net.Conn) *unixConnection{
 
 func (c *unixConnection) Handle() error{
 	defer c.conn.Close()
-	go func ()  {
+	c.server.group.Go(func() error{
 		<-c.ctx.Done()
 		logger.Warn("closing connection")
-		c.conn.Close()
-	}()
+		return c.conn.Close()
+	})
 
 	parser := NewParser(c.conn)
 	req, err := parser.ParseRequest()

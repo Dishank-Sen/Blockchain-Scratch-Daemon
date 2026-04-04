@@ -4,11 +4,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
-
-	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 	"github.com/Dishank-Sen/quicnode/node"
-	"github.com/quic-go/quic-go"
+	"github.com/Dishank-Sen/transport-config/config"
 )
 
 func getConfig(addr string) (node.Config, error){
@@ -16,15 +14,11 @@ func getConfig(addr string) (node.Config, error){
 	if err != nil{
 		return node.Config{}, err
 	}
-	quicCfg := &quic.Config{
-		MaxIdleTimeout: constants.MaxIdleTimeout,
-		KeepAlivePeriod: constants.KeepAlivePeriod,
-	}
 
 	return node.Config{
 		ListenAddr: addr,
 		TlsConfig: tlsCfg,
-		QuicConfig: quicCfg,
+		QuicConfig: config.QuicCfg(),
 	}, nil
 }
 

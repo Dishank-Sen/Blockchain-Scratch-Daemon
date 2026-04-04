@@ -35,11 +35,11 @@ func newWindowsConnection(
 func (c *windowsConnection) Handle() error {
 	defer c.cancel()
 
-	go func() {
+	c.server.group.Go(func() error{
 		<-c.ctx.Done()
 		logger.Warn("closing windows pipe connection")
-		c.conn.Close()
-	}()
+		return c.conn.Close()
+	})
 
 	parser := NewParser(c.conn)
 

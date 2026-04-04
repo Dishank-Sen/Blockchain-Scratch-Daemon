@@ -1,8 +1,13 @@
 //go:build windows
+
 package ipc
 
-import "context"
+import (
+	"context"
 
-func NewServer(ctx context.Context) (Server, error) {
-	return newWindowsServer(ctx)
+	"golang.org/x/sync/errgroup"
+)
+
+func NewServer(ctx context.Context, g *errgroup.Group) (Server, error) {
+	return newWindowsServer(ctx, g)
 }
