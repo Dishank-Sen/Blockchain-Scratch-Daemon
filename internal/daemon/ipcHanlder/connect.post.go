@@ -23,7 +23,13 @@ type peersList struct {
 func (h *Handler) ConnectController(req *types.Request) *types.Response {
 	var body connectBody
 	if err := json.Unmarshal(req.Body, &body); err != nil {
-		return nil
+		logger.Error(fmt.Sprintf("failed to unmarshal connect request: %v", err))
+		return &types.Response{
+			StatusCode: 400,
+			Message:    "Bad Request",
+			Headers:    nil,
+			Body:       []byte("invalid JSON payload"),
+		}
 	}
 	if err := utils.SaveID(body.ID); err != nil{
 		logger.Error(err.Error())
