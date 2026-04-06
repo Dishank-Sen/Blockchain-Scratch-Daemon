@@ -1,5 +1,5 @@
-github.com/Dishank-Sen/quicnode v0.0.9 h1:VhH/tQ6H3VxmHQGxvNDWfjMLZJpYkUrQY3QL1FrmoYM=
-github.com/Dishank-Sen/quicnode v0.0.9/go.mod h1:u4zLvyQdv60QEg2ZN085o17IXeXBDKHrM5co56KRet0=
+github.com/Dishank-Sen/quicnode v0.0.10 h1:IWuM5y9lhEthMp5fiDnCuV5RSrumODBwlPnqM+Xu110=
+github.com/Dishank-Sen/quicnode v0.0.10/go.mod h1:u4zLvyQdv60QEg2ZN085o17IXeXBDKHrM5co56KRet0=
 github.com/Dishank-Sen/transport-config v0.0.1 h1:iqr8pGLD5SW/6zrBXr5XOA8ukbLGoy+hY/MaxkajIVc=
 github.com/Dishank-Sen/transport-config v0.0.1/go.mod h1:mYUh1040c7fa1GU6n+SeN0S70KcvmpAL/O9z4WlrHws=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
