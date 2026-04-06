@@ -16,23 +16,43 @@ type payload struct{
 	Addr string `json:"addr"`
 }
 
+type acceptRequestPayload struct {
+	ID string `json:"id"`
+}
+
 func (h *Handler) AcceptPeers(ctx context.Context, req *types.Request) *types.Response{
 	logger.Info("accept-peer handler :)")
 	var p payload
 	if err := json.Unmarshal(req.Body, &p); err != nil{
-		return errorRes()
+		return errorResponseWithLog("failed to parse accept-peers payload")
 	}
+	
+	// Store the peer from bootstrap info
+	h.peerStore.Add(p.ID, p.Addr)
+	logger.Debug(fmt.Sprintf("peer %s stored at %s (from bootstrap)", p.ID, p.Addr))
+	
 	id, err := utils.GetID()
 	if err != nil{
 		logger.Error(err.Error())
+		return errorResponseWithLog("failed to get node ID")
 	}
 
 	time.Sleep(1*time.Second)
 	baseDelay := time.Second
+	
+	acceptPayload := acceptRequestPayload{
+		ID: id,
+	}
+	
+	payloadBytes, err := json.Marshal(acceptPayload)
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to marshal payload: %v", err))
+		return errorResponseWithLog("failed to create request payload")
+	}
 
 	for i := 0; i < 5; i++{
 		logger.Debug(fmt.Sprintf("sending accept request to %s", p.ID))
-		resp, err := h.node.Dial(p.Addr, "accept-request", nil, fmt.Appendf(nil, "accept request from %s", id))
+		resp, err := h.node.Dial(p.Addr, "accept-request", nil, payloadBytes)
 		if err != nil{
 			logger.Error(err.Error())
 			// exponential backoff
@@ -57,12 +77,13 @@ func (h *Handler) AcceptPeers(ctx context.Context, req *types.Request) *types.Re
 	}
 }
 
-func errorRes() *types.Response{
+func errorResponseWithLog(msg string) *types.Response{
+	logger.Error(msg)
 	errRes := &types.Response{
 		StatusCode: 500,
 		Message: "Error",
 		Headers: map[string]string{},
-		Body: []byte("Internal Server Error"),
+		Body: []byte(msg),
 	}
 	return errRes
 }

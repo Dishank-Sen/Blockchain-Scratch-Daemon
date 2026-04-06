@@ -8,6 +8,7 @@ import (
 
 	customerrors "github.com/Dishank-Sen/Blockchain-Scratch-Daemon/customErrors"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/internal/ipc"
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/pkg/peerstore"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 	"github.com/Dishank-Sen/quicnode/node"
 	"golang.org/x/sync/errgroup"
@@ -17,6 +18,7 @@ type Daemon struct{
 	cfg  node.Config
 	node *node.Node
 	server ipc.Server
+	peerStore *peerstore.PeerStore
 	ctx context.Context
 	cancel context.CancelFunc
 	group *errgroup.Group
@@ -58,6 +60,7 @@ func NewDaemon(ctx context.Context, addr string) (*Daemon, error) {
 	daemon := &Daemon{
 		node: n,
 		server: server,
+		peerStore: peerstore.NewPeerStore(),
 		ctx: daemonCtx,
 		cancel: daemonCancel,
 		group: g,

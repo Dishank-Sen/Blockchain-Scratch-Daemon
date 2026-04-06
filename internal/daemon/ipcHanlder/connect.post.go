@@ -110,10 +110,28 @@ func peerExists(body []byte) bool{
 }
 
 func (h *Handler) connectToPeer(p []peersList) bool {
+    id, err := utils.GetID()
+    if err != nil {
+        logger.Error(fmt.Sprintf("failed to get ID: %v", err))
+        return false
+    }
+    
     for _, peer := range p {
         logger.Debug(fmt.Sprintf("connecting to peer %s %s", peer.ID, peer.Addr))
 
         baseDelay := time.Second
+        
+        connectPayload := struct {
+            ID string `json:"id"`
+        }{
+            ID: id,
+        }
+        
+        payloadBytes, err := json.Marshal(connectPayload)
+        if err != nil {
+            logger.Error(fmt.Sprintf("failed to marshal payload: %v", err))
+            continue
+        }
 
         for i := 0; i < 5; i++ {
             logger.Debug(fmt.Sprintf("attempt %d", i+1))
@@ -122,11 +140,14 @@ func (h *Handler) connectToPeer(p []peersList) bool {
                 peer.Addr,
                 "connect-request",
                 nil,
-                fmt.Appendf(nil, "connect request from %s", h.ID),
+                payloadBytes,
             )
 
             if err == nil && resp.StatusCode == 200 {
                 logger.Debug("connection successful")
+                // Store the peer locally
+                h.peerStore.Add(peer.ID, peer.Addr)
+                logger.Debug(fmt.Sprintf("peer %s stored locally", peer.ID))
                 return true
             }
 

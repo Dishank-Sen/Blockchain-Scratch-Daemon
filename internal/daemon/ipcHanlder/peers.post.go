@@ -1,16 +1,33 @@
 package ipchanlder
 
 import (
-	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/constants"
+	"encoding/json"
+
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/types"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 )
 
+type peerInfo struct {
+	ID   string `json:"id"`
+	Addr string `json:"addr"`
+}
+
 func (h *Handler) PeersController(req *types.Request) *types.Response{
-	n := h.node
-	resp, err := n.Dial(constants.PublicBootstrapUrl, "peers", req.Headers, req.Body)
-	logger.Debug(string(resp.Body))
-	if err != nil{
+	// Get all connected peers from peer store
+	peers := h.peerStore.GetAll()
+	
+	// Convert to response format
+	peerList := make([]peerInfo, 0, len(peers))
+	for _, p := range peers {
+		peerList = append(peerList, peerInfo{
+			ID:   p.ID,
+			Addr: p.Addr,
+		})
+	}
+	
+	responseData, err := json.Marshal(peerList)
+	if err != nil {
+		logger.Error("failed to marshal peer list")
 		return &types.Response{
 			StatusCode: 500,
 			Message: "Error",
@@ -18,10 +35,13 @@ func (h *Handler) PeersController(req *types.Request) *types.Response{
 			Body: []byte("Internal Server Error"),
 		}
 	}
+	
+	logger.Debug(string(responseData))
+	
 	return &types.Response{
-		StatusCode: resp.StatusCode,
-		Message: resp.Message,
-		Headers: resp.Headers,
-		Body: resp.Body,
+		StatusCode: 200,
+		Message: "ok",
+		Headers: nil,
+		Body: responseData,
 	}
 }

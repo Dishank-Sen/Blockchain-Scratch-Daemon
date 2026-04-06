@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/pkg/peerstore"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils"
 	"github.com/Dishank-Sen/Blockchain-Scratch-Daemon/utils/logger"
 	"github.com/Dishank-Sen/quicnode/node"
@@ -12,11 +13,13 @@ import (
 
 type Handler struct{
 	node *node.Node
+	peerStore *peerstore.PeerStore
 }
 
-func NewNodeHandler(node *node.Node) *Handler{
+func NewNodeHandler(node *node.Node, ps *peerstore.PeerStore) *Handler{
 	return &Handler{
 		node: node,
+		peerStore: ps,
 	}
 }
 
